@@ -4,7 +4,7 @@ from typing import Optional
 import shutil
 import os
 from datetime import datetime
-
+from app.utils.email_service import send_approval_email
 from app.database import SessionLocal
 from app.models.document import Document
 from app.models.user import User
@@ -125,11 +125,16 @@ def approve_document(
     document.status = "approved"
     db.commit()
 
-    background_tasks.add_task(log_approval, document.filename)
+    user = db.query(User).filter(User.id == document.uploaded_by).first()
 
-    return {"message": "Document approved successfully"}
+   
+    background_tasks.add_task(
+        send_approval_email,
+        user.email,
+        document.filename
+    )
 
-
+    return {"message": "Document approved & email sent"}
 # ---------------- Reject Document ---------------- #
 
 @router.put("/reject/{doc_id}")
