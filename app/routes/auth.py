@@ -6,6 +6,8 @@ from jose import jwt, JWTError
 from app.schemas.user import UserCreate, UserResponse, TokenResponse
 from app.database import SessionLocal
 from app.models.user import User
+from app.utils.rate_limiter import check_rate_limit
+
 from app.core.security import (
     hash_password,
     verify_password,

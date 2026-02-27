@@ -8,6 +8,8 @@ from app.utils.email_service import send_approval_email
 from app.database import SessionLocal
 from app.models.document import Document
 from app.models.user import User
+from fastapi.responses import StreamingResponse
+
 from app.dependencies.auth import get_current_user, admin_only
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
@@ -15,7 +17,7 @@ router = APIRouter(prefix="/documents", tags=["Documents"])
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+MAX_FILE_SIZE = 5 * 1024 * 1024  
 ALLOWED_TYPES = ["application/pdf", "image/jpeg", "image/png"]
 
 
@@ -152,3 +154,60 @@ def reject_document(
     db.commit()
 
     return {"message": "Document rejected successfully"}
+
+#---------------------Download---------------------#
+
+@router.get("/{id}/download")
+def download_document(id: str, db: Session = Depends(get_db)):
+
+    
+    doc = db.query(Document).filter(
+        Document.id == id,
+        Document.is_deleted == False
+    ).first()
+
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+   
+    if doc.status != "approved":
+        raise HTTPException(
+            status_code=403,
+            detail="Document not approved"
+        )
+
+    
+    if not os.path.exists(doc.file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    file = open(doc.file_path, "rb")
+
+
+    return StreamingResponse(
+        file,
+        media_type="application/octet-stream",
+        headers={
+            "Content-Disposition": f"attachment; filename={doc.filename}"
+        }
+    )
+#----------------------------Delete----------------------------#
+
+@router.delete("/{id}")
+def soft_delete_document(
+    id: str,
+    db: Session = Depends(get_db),
+    user = Depends(get_current_user)
+):
+    doc = db.query(Document).filter(Document.id == id).first()
+
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    # 🔥 Soft delete
+    doc.is_deleted = True
+    doc.deleted_at = datetime.utcnow()
+
+    db.commit()
+
+    return {"message": "Document soft deleted"}
+

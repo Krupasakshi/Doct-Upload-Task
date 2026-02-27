@@ -6,6 +6,8 @@ from app.routes import auth, documents
 from app.models.user import User
 from app.core.security import hash_password
 
+
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -37,3 +39,8 @@ def create_admin():
         print("Admin already exists")
 
     db.close()
+
+
+
+
+

@@ -23,7 +23,7 @@ def send_approval_email(to_email: str, filename: str):
         server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
         server.sendmail(EMAIL_ADDRESS, to_email, msg.as_string())
         server.quit()
-        print("✅ Email sent successfully")
+        print("Email sent successfully")
 
     except Exception as e:
-        print("❌ Email sending failed:", e)
+        print("Email sending failed:", e)
