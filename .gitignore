@@ -1,5 +1,0 @@
-test.db
-.env
-uploads/
-*.log
-__pycache__/
