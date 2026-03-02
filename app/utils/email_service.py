@@ -1,11 +1,15 @@
 import smtplib
 from email.mime.text import MIMEText
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 
-EMAIL_ADDRESS = "krupapython0000@gmail.com"
-EMAIL_PASSWORD = "lbnnkhdadiglbxmp"
+EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
 
 def send_approval_email(to_email: str, filename: str):
