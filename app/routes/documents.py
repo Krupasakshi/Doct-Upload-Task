@@ -12,6 +12,18 @@ from fastapi.responses import StreamingResponse
 
 from app.dependencies.auth import get_current_user, admin_only
 
+from app.services.storage import LocalStorageService
+from app.services.cache import (
+    get_cached_approved,
+    set_cached_approved,
+    get_cached_dashboard,
+    set_cached_dashboard,
+    clear_cache
+)
+
+router = APIRouter()
+storage = LocalStorageService()
+
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
 UPLOAD_DIR = "uploads"
@@ -203,7 +215,7 @@ def soft_delete_document(
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    # 🔥 Soft delete
+   
     doc.is_deleted = True
     doc.deleted_at = datetime.utcnow()
 
@@ -211,3 +223,75 @@ def soft_delete_document(
 
     return {"message": "Document soft deleted"}
 
+#=============================================#
+
+@router.post("/upload")
+def upload_file(file: UploadFile, db: Session = Depends(get_db)):
+
+    filename = storage.upload(file, file.filename)
+    file_url = storage.get_url(filename)
+
+    doc = Document(
+        filename=filename,
+        url=file_url,
+        status="pending"
+    )
+
+    db.add(doc)
+    db.commit()
+
+    return {"message": "uploaded", "url": file_url}
+
+
+#============================================#
+@router.get("/approved")
+def get_approved(db: Session = Depends(get_db)):
+
+    cached = get_cached_approved()
+    if cached:
+        return cached
+
+    docs = db.query(Document).filter(Document.status == "approved").all()
+
+    result = [{"id": d.id, "file": d.filename} for d in docs]
+
+    set_cached_approved(result)
+
+    return result
+
+
+#=========================================#
+@router.get("/dashboard")
+def dashboard(db: Session = Depends(get_db)):
+
+    cached = get_cached_dashboard()
+    if cached:
+        return cached
+
+    total = db.query(Document).count()
+    approved = db.query(Document).filter(Document.status == "approved").count()
+    rejected = db.query(Document).filter(Document.status == "rejected").count()
+
+    data = {
+        "total": total,
+        "approved": approved,
+        "rejected": rejected
+    }
+
+    set_cached_dashboard(data)
+
+    return data
+
+
+#============================================#
+@router.put("/status/{doc_id}")
+def update_status(doc_id: int, status: str, db: Session = Depends(get_db)):
+
+    doc = db.query(Document).get(doc_id)
+    doc.status = status
+    db.commit()
+
+
+    clear_cache()
+
+    return {"message": "updated"}

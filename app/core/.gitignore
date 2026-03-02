@@ -1,0 +1,7 @@
+# Ignore files/folders
+.env
+*.db
+logs/
+uploads/
+
+__pycache__/
