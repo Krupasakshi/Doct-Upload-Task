@@ -55,7 +55,7 @@ def register(
 
    
     background_tasks.add_task(
-        send_email,
+        
         new_user.email,
         "Registration Successful",
         f"Hello {new_user.email}, you have successfully registered!"
@@ -81,7 +81,7 @@ def forgot_password(
     reset_link = f"http://localhost:3000/reset-password?token={token}"
 
     background_tasks.add_task(
-        send_email,
+        
         user.email,
         "Reset Password",
         f"Click here to reset password: {reset_link}"
@@ -161,3 +161,5 @@ def refresh_token(token: str):
             status_code=401,
             detail="Invalid or expired refresh token"
         )
+
+

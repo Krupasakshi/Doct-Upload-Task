@@ -14,7 +14,11 @@ from sqlalchemy import text
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(
+    title="Document Management API",
+    description="This API allows users to upload, approve, reject and download documents with authentication.",
+    version="1.0.0"
+)
 
 app.include_router(auth.router)
 app.include_router(documents.router, prefix="/api/v1/docs")
